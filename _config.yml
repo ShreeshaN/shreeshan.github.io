@@ -24,8 +24,7 @@ twitter_username: badgod03
 github_username:  ShreeshaN
 facebook_username: nshreesha
 linkedin_username: /shreesha-n/
-baseurl: /shreesha.github.io/
-
+baseurl: /
 # Build settings
 markdown: kramdown
 theme: jekyll-theme-clean-blog
