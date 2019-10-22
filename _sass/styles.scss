@@ -1,0 +1,106 @@
+// Import Core Clean Blog SCSS
+@import "../assets/vendor/startbootstrap-clean-blog/scss/clean-blog.scss";
+.large-header {
+  position: relative;
+  width: 100%;
+  height:400px;
+  //background: #111;
+  overflow: hidden;
+  background-size: cover;
+  background-position: inherit;
+  z-index: 1;
+}
+
+#homepage_container {
+  position: relative;
+  width: 100%;
+}
+
+
+.demo .large-header {
+  background-image: url("/img/173801.png");
+  background-size: cover;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+}
+
+.main-title {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  color: #F9F1E9;
+  text-align: center;
+  top: 25%;
+  left: 50%;
+  -webkit-transform: translate3d(-50%, -50%, 0);
+  transform: translate3d(-50%, -50%, 0);
+}
+
+.demo .main-title {
+  text-transform: uppercase;
+  font-size: 4.2em;
+  letter-spacing: 0.1em;
+}
+
+.main-title .thin {
+  font-weight: 200;
+}
+
+@media only screen and (max-width: 968px) {
+  .demo .main-title {
+    font-size: 3em;
+  }
+}
+
+
+
+// name animation
+
+
+.name-article-heading{
+  text-align: -moz-left;
+  color:white;
+  overflow:hidden;
+  font-weight: 800;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.content-article-heading{
+  color:white;
+  //float:right;
+  text-align: -moz-right;
+  font-weight: 800;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+.name-article{
+  font-weight: 800;
+  overflow:hidden;
+  width:100%;
+  margin:0;
+  padding:0;
+  font-size:2em;
+  top: 25%;
+  left: 50%;
+  position:absolute;
+  -webkit-transform: translate3d(-50%, -50%, 0);
+  transform: translate3d(-50%, -50%, 0);
+  text-align: center;
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+
+// brain logo
+.navbar .nav > li > a.brand-image {
+  padding: 4px 0px 0px 0px;
+  width:20px;
+  height:20px;
+}
+.navbar .nav > li > a > img.brand-image {
+  -webkit-border-radius: 0px;
+  -moz-border-radius: 0px;
+}
+
+.brand-image{
+  width:80px;
+}
