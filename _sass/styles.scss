@@ -1,9 +1,10 @@
 // Import Core Clean Blog SCSS
 @import "../assets/vendor/startbootstrap-clean-blog/scss/clean-blog.scss";
+
 .large-header {
   position: relative;
   width: 100%;
-  height:400px;
+  height: 400px;
   //background: #111;
   overflow: hidden;
   background-size: cover;
@@ -54,35 +55,35 @@
 }
 
 
-
 // name animation
 
 
-.name-article-heading{
+.name-article-heading {
   text-align: -moz-left;
-  color:white;
-  overflow:hidden;
+  color: white;
+  overflow: hidden;
   font-weight: 800;
   font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-.content-article-heading{
-  color:white;
+.content-article-heading {
+  color: white;
   //float:right;
   text-align: -moz-right;
   font-weight: 800;
   font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
-.name-article{
+
+.name-article {
   font-weight: 800;
-  overflow:hidden;
-  width:100%;
-  margin:0;
-  padding:0;
-  font-size:2em;
+  overflow: hidden;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-size: 2em;
   top: 25%;
   left: 50%;
-  position:absolute;
+  position: absolute;
   -webkit-transform: translate3d(-50%, -50%, 0);
   transform: translate3d(-50%, -50%, 0);
   text-align: center;
@@ -93,14 +94,40 @@
 // brain logo
 .navbar .nav > li > a.brand-image {
   padding: 4px 0px 0px 0px;
-  width:20px;
-  height:20px;
+  width: 20px;
+  height: 20px;
 }
+
 .navbar .nav > li > a > img.brand-image {
   -webkit-border-radius: 0px;
   -moz-border-radius: 0px;
 }
 
-.brand-image{
-  width:80px;
+.brand-image {
+  width: 80px;
+}
+
+.project-title {
+  text-align: center;
+}
+
+.project-details {
+  text-align: center;
+
+  font-weight: normal;
+}
+
+
+.credentials{
+  font-weight: normal !important;
+  color: #898d8f !important;
+  text-align: center !important;
+  font-size: small !important;
+}
+
+.technologies{
+  font-weight: normal !important;
+  text-align: center;
+  color: #898d8f !important;
+  font-size: small !important;
 }
