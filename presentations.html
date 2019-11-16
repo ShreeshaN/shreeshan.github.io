@@ -1,0 +1,62 @@
+---
+layout: page_presentations
+title: Learn-Teach-Repeat
+background: '/img/presentations/PowerPoint-Clips-Featured.jpg'
+horovod: 'https://www.youtube.com/watch?v=6mE6zCRIBCc'
+---
+
+<!--    HOROVOD-->
+<div class="video-div">
+    <h2 class="video-title">Horovod</h2>
+    <h4 class="video-sub-title">
+        Training deep neural networks in a distributed fashion in Tensorflow!
+    </h4>
+    <small class="technologies">Find slides in the video description</small>
+    <div class="video-responsive">
+        <iframe width="420" height="315" src="https://www.youtube.com/embed/6mE6zCRIBCc" frameborder="0"
+                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+    </div>
+
+
+</div>
+<br/>
+<br/>
+<!--    ANOVA-->
+<div class="video-div">
+    <h2 class="video-title">Anova</h2>
+    <h4 class="video-sub-title">
+        A statistical method to estimate the differences among group means in a sample!
+    </h4>
+    <small class="technologies">Find slides in the video description</small>
+    <div class="video-responsive">
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/kAfUe5e3_Nk" frameborder="0"
+                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+    </div>
+</div>
+
+
+
+<hr>
+
+<!-- Pager -->
+{% if paginator.total_pages > 1 %}
+
+<div class="clearfix">
+
+    {% if paginator.previous_page %}
+    <a class="btn btn-primary float-left"
+       href="{{ paginator.previous_page_path | prepend: site.baseurl | replace: '//', '/' }}">&larr;
+        Newer<span class="d-none d-md-inline"> Posts</span></a>
+    {% endif %}
+
+    {% if paginator.next_page %}
+    <a class="btn btn-primary float-right"
+       href="{{ paginator.next_page_path | prepend: site.baseurl | replace: '//', '/' }}">Older<span
+            class="d-none d-md-inline"> Posts</span> &rarr;</a>
+    {% endif %}
+
+</div>
+
+{% endif %}
