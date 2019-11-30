@@ -14,6 +14,9 @@ layout: default
         <div class="col-lg-8 col-md-10 mx-auto">
           <div class="page-heading">
             <h2>{{ page.title }}</h2>
+            {% if page.quote %}
+            <h6 style="font-weight: lighter">{{ page.quote }}</h6>
+            {% endif %}
             {% if page.description %}
             <span class="subheading">{{ page.description }}</span>
             {% endif %}
