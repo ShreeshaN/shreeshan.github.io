@@ -1,0 +1,1585 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2020-04-19T08:46:25-04:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Shree Blogs</title><subtitle>Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.</subtitle><entry><title type="html">Predictive Machine Maintainence</title><link href="http://localhost:4000/2020/04/01/machine_maintainence.html" rel="alternate" type="text/html" title="Predictive Machine Maintainence" /><published>2020-04-01T10:33:13-04:00</published><updated>2020-04-01T10:33:13-04:00</updated><id>http://localhost:4000/2020/04/01/machine_maintainence</id><content type="html" xml:base="http://localhost:4000/2020/04/01/machine_maintainence.html">&lt;script src=&quot;https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js&quot;&gt;&lt;/script&gt;
+
+&lt;h1 id=&quot;predictive-machine-maintainence&quot;&gt;Predictive Machine Maintainence&lt;/h1&gt;
+
+&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+
+&lt;h3 id=&quot;problem-statement&quot;&gt;Problem Statement:&lt;/h3&gt;
+&lt;p&gt;At times, large machines which run 24*7 throught the year tend to fail. And these failures come along with some sign which can be identified and prevented from happening. Data about a machine’s run can be collected from various sources and tracked over a period of time so detect these failures. Let us come up with one such approach to predict when a model fails.&lt;/p&gt;
+
+&lt;h3 id=&quot;about-the-data&quot;&gt;About the data:&lt;/h3&gt;
+&lt;p&gt;We have been given a set of &lt;a href=&quot;https://drive.google.com/drive/folders/1b12u6rzkG1AxB6wLGl7IBVoaoSoZLHNR&quot;&gt;files&lt;/a&gt;. Each file has information about a particular machine. What is this information? Let’s find out.
+For every 8 hours, data from 4 different sources representing a machine’s state is captured i.e. 3 entries per day. A history total of 2 years 9 months is captured. This gives us a reading of 3000 rows per machine. We have such data from 20 machines.&lt;/p&gt;
+
+&lt;h3 id=&quot;modes-of-a-machine&quot;&gt;Modes of a machine:&lt;/h3&gt;
+&lt;p&gt;Each machine has three modes.&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;Normal mode&lt;/strong&gt; : Usually a machine will be in this mode when it starts&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Faulty mode&lt;/strong&gt; : When a machine is about to fail, it shows a visible pattern which indicates faults in
+the machine. This is where our method should inform officials that machine is likely going to fail&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Failed mode&lt;/strong&gt; : When a machine fails to run and halts, it is said to be in failed mode, incurring huge
+losses to the company&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;aim&quot;&gt;Aim:&lt;/h3&gt;
+&lt;p&gt;Detect when a machine enters Faulty mode and raise an alarm.&lt;/p&gt;
+
+&lt;h3 id=&quot;solution&quot;&gt;Solution:&lt;/h3&gt;
+&lt;p&gt;Couple of steps before we head to find the solution. Our data needs to be cleansed and made ready for
+computation. Let us split the solution into multiple stages.&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;Data Cleansing&lt;/li&gt;
+  &lt;li&gt;Data Analysis&lt;/li&gt;
+  &lt;li&gt;Data Transformations&lt;/li&gt;
+  &lt;li&gt;Computational Inference (Prediction)&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Let us go ahead and implement each stage in a modular fashion.&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint&quot;&gt;&lt;code class=&quot;language-python&quot;&gt;
+# Import all necessary libraries in this cell
+from IPython.display import display
+import pandas as pd
+import matplotlib.pyplot as plt
+%matplotlib inline
+import matplotlib as mpl
+from scipy import stats
+import glob
+import numpy as np
+mpl.style.use('seaborn-darkgrid')
+palette = plt.get_cmap('Set1')
+&lt;/code&gt;
+&lt;/pre&gt;
+
+&lt;h2 id=&quot;stage-1-data-cleansing&quot;&gt;Stage 1: Data Cleansing&lt;/h2&gt;
+
+&lt;p&gt;Here, we load each file as a dataframe, look at a subset of the data, understand its structure, check for missing values or nan’s and finally fill in missing values with standard techniques like mean, median depending on inputs from domain experts. Basically get the look and feel of the data.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;PS: For demonstrating purposes let us stick to single csv file&lt;/em&gt;&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+data_path = '/Users/badgod/badgod_documents/Datasets/tagup_challenge/exampleco_data/'
+data = pd.read_csv(f'{data_path}/machine_7.csv',index_col=0)
+data.head()
+&lt;/pre&gt;
+
+&lt;div&gt;
+&lt;table class=&quot;table table-sm&quot;&gt;
+  &lt;thead&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 0&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 1&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 2&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 3&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;12.60&lt;/td&gt;
+      &lt;td&gt;8.82&lt;/td&gt;
+      &lt;td&gt;-11.77&lt;/td&gt;
+      &lt;td&gt;10.07&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;10.82&lt;/td&gt;
+      &lt;td&gt;2.77&lt;/td&gt;
+      &lt;td&gt;11.55&lt;/td&gt;
+      &lt;td&gt;21.89&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;21.07&lt;/td&gt;
+      &lt;td&gt;-0.66&lt;/td&gt;
+      &lt;td&gt;-17.83&lt;/td&gt;
+      &lt;td&gt;-1.35&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;32.29&lt;/td&gt;
+      &lt;td&gt;6.53&lt;/td&gt;
+      &lt;td&gt;-13.49&lt;/td&gt;
+      &lt;td&gt;-4.25&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;28.06&lt;/td&gt;
+      &lt;td&gt;3.70&lt;/td&gt;
+      &lt;td&gt;21.98&lt;/td&gt;
+      &lt;td&gt;13.63&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Data has 5 columns in total. First column is the timestep and rest of the 4 columns are the features indicating a machine’s health&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+data.describe()
+&lt;/pre&gt;
+
+&lt;div&gt;
+&lt;table class=&quot;table table-sm&quot;&gt;
+  &lt;thead&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;th&gt;&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 0&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 1&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 2&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 3&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;count&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;mean&lt;/td&gt;
+      &lt;td&gt;-0.40&lt;/td&gt;
+      &lt;td&gt;-0.10&lt;/td&gt;
+      &lt;td&gt;0.30&lt;/td&gt;
+      &lt;td&gt;1.93&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;std&lt;/td&gt;
+      &lt;td&gt;61.01&lt;/td&gt;
+      &lt;td&gt;55.69&lt;/td&gt;
+      &lt;td&gt;57.53&lt;/td&gt;
+      &lt;td&gt;57.77&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;min&lt;/td&gt;
+      &lt;td&gt;-319.99&lt;/td&gt;
+      &lt;td&gt;-269.28&lt;/td&gt;
+      &lt;td&gt;-292.44&lt;/td&gt;
+      &lt;td&gt;-275.33&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;25%&lt;/td&gt;
+      &lt;td&gt;-0.46&lt;/td&gt;
+      &lt;td&gt;-0.24&lt;/td&gt;
+      &lt;td&gt;-1.15&lt;/td&gt;
+      &lt;td&gt;-0.02&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;50%&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;0.00&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;75%&lt;/td&gt;
+      &lt;td&gt;1.19&lt;/td&gt;
+      &lt;td&gt;0.13&lt;/td&gt;
+      &lt;td&gt;0.35&lt;/td&gt;
+      &lt;td&gt;0.76&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;max&lt;/td&gt;
+      &lt;td&gt;310.72&lt;/td&gt;
+      &lt;td&gt;263.39&lt;/td&gt;
+      &lt;td&gt;285.20&lt;/td&gt;
+      &lt;td&gt;359.93&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Each feature has 3000 timesteps. Now that we understand the structure of our data let us head to &lt;strong&gt;data cleansing&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;missing-value-treatment&quot;&gt;Missing value treatment&lt;/h4&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+data.isnull().sum()
+&lt;/pre&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Col 0 - 0
+Col 1 - 0
+Col 2 - 0
+Col 3 - 0
+dtype: int64
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;As we see, all four columns have no missing values. Let us read all the dataframes into memory and cleanse data&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+def fix_missing_values(df):
+    &quot;&quot;&quot;
+    Method accepts a pandas dataframe, checks for nan's or missing values and replace them with column median. 
+    More sophisticated methods replacement methods can also be incorporated in future.
+    :param df: a pandas dataframe
+    :return: dataframe without nans
+    &quot;&quot;&quot;
+    if df.isnull().sum().sum() !=0:
+        return df.fillna(df.median())
+    else:
+        return df
+&lt;/pre&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+files = glob.glob(f&quot;{data_path}/*&quot;)
+dfs = []
+if len(files)&amp;gt;0:
+    for file in files:
+        df = pd.read_csv(file, index_col=0)
+        dfs.append(df)
+else:
+    raise Expection(f&quot;Data files not found in path {data_path}&quot;)
+
+&lt;/pre&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+&quot;Total number of dataframes in memory &quot;,len(dfs)
+&lt;/pre&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;('Total number of dataframes in memory ', 20)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Let us head straight to the next stage in our pipeline, &lt;strong&gt;data transformations&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;small color=&quot;grey&quot;&gt;&lt;em&gt;PS: Please keep in mind ‘data’ is a single dataframe on which we test our methods. We then appy these methods on entire dataset ‘dfs’&lt;/em&gt;&lt;/small&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;stage-2--3-data-analysis--transformations&quot;&gt;Stage 2 &amp;amp; 3: Data Analysis &amp;amp; Transformations&lt;/h2&gt;
+
+&lt;p&gt;Here in this section, we will conduct thorough exploratory analysis on the data and carry out required transformations to make data suitable for computational inference.&lt;/p&gt;
+
+&lt;p&gt;Let us plot all the features vs timesteps (features on y-axis; timesteps on x-axis)&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+mpl.rcParams['figure.dpi'] = 150
+plt.plot(range(len(data)), data)
+plt.xlabel('timesteps')
+plt.ylabel('feature values')
+plt.show()
+&lt;/pre&gt;
+
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_15_0.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Clearly, this plot does not give us any clear information about the underlying behaviour of a machine, which the four variables capture. Let us print some statistics about the data and understand them clearly.&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+data.describe()
+&lt;/pre&gt;
+
+&lt;div&gt;
+&lt;table class=&quot;table table-sm&quot;&gt;
+  &lt;thead&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;th&gt;&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 0&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 1&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 2&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 3&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;count&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;mean&lt;/td&gt;
+      &lt;td&gt;-0.40&lt;/td&gt;
+      &lt;td&gt;-0.10&lt;/td&gt;
+      &lt;td&gt;0.30&lt;/td&gt;
+      &lt;td&gt;1.93&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;std&lt;/td&gt;
+      &lt;td&gt;61.01&lt;/td&gt;
+      &lt;td&gt;55.69&lt;/td&gt;
+      &lt;td&gt;57.53&lt;/td&gt;
+      &lt;td&gt;57.77&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;min&lt;/td&gt;
+      &lt;td&gt;-319.99&lt;/td&gt;
+      &lt;td&gt;-269.28&lt;/td&gt;
+      &lt;td&gt;-292.44&lt;/td&gt;
+      &lt;td&gt;-275.33&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;25%&lt;/td&gt;
+      &lt;td&gt;-0.46&lt;/td&gt;
+      &lt;td&gt;-0.24&lt;/td&gt;
+      &lt;td&gt;-1.15&lt;/td&gt;
+      &lt;td&gt;-0.02&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;50%&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;0.00&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;75%&lt;/td&gt;
+      &lt;td&gt;1.19&lt;/td&gt;
+      &lt;td&gt;0.13&lt;/td&gt;
+      &lt;td&gt;0.35&lt;/td&gt;
+      &lt;td&gt;0.76&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;max&lt;/td&gt;
+      &lt;td&gt;310.72&lt;/td&gt;
+      &lt;td&gt;263.39&lt;/td&gt;
+      &lt;td&gt;285.20&lt;/td&gt;
+      &lt;td&gt;359.93&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Looking at the standard deviation and the range of data, we see some vairance in the data. Clearly it is less suitable for any predictive modelling and needs transformations like &lt;strong&gt;outlier treatment, data normalization, skew removal&lt;/strong&gt; etc.&lt;/p&gt;
+
+&lt;p&gt;Let us go ahead and check if the data has any outliers (Need to be very careful when calling data point an outlier. Domain expertise needs to be strictly considered).&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+plt.subplots_adjust(bottom=0.3, top=1.5, left=0.4, right=1.5)
+for i in range(len(data.columns)):
+    plt.subplot(2,2,i+1)
+    plt.boxplot(data[str(i)])
+    plt.ylabel('feature values')
+plt.show()
+&lt;/pre&gt;
+
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_19_0.png&quot; /&gt;&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+plt.subplots_adjust(bottom=0.3, top=1.5, left=0.4, right=1.5)
+for i in range(len(data.columns)):
+    plt.subplot(2,2,i+1)
+    plt.scatter(range(len(data)),data[str(i)], color=palette(i), label=&quot;feaure_&quot;+str(i))
+    plt.xlabel('timesteps')
+    plt.ylabel('feature values')
+    plt.legend(loc=1)
+plt.show()
+&lt;/pre&gt;
+
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_20_0.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Clearly, this is not a pretty sight. For all the four features, there are few data points which are above 200 and below -200. This can be due to multiple reasons. May be from measurement errors, or from power variations in the machine environment etc. Based on domain expertise, let us consider them as outliers for now, and ofcourse treat them.&lt;/p&gt;
+
+&lt;h3 id=&quot;outlier-treatment&quot;&gt;Outlier treatment&lt;/h3&gt;
+&lt;p&gt;Let us consider two methods for outlier removal process.&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;Z-score&lt;/li&gt;
+  &lt;li&gt;Inter Quartile Range&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;After visualizing the results of each process we will decide which method to pick&lt;/p&gt;
+
+&lt;h5 id=&quot;1-z-score&quot;&gt;1. Z-score&lt;/h5&gt;
+&lt;p&gt;Let us use a method called Z-score to identify and remove outliers. Z-score says how many standard deviations is a given data point devaiating from the mean. Z-score centers the data around zero mean and unit variance. Usually a threshold of 3 standard deviations is allowed in standard outlier removal practice. So let us stick to that.&lt;/p&gt;
+
+&lt;p&gt;The formula for calculating Z-score is given by:
+&lt;script type=&quot;math/tex&quot;&gt;(feature - feature.mean()) / feature.std()&lt;/script&gt;&lt;/p&gt;
+
+&lt;p&gt;i.e subtract the feature by its mean and divide this difference with its standard deviation.&lt;/p&gt;
+
+&lt;h5 id=&quot;2-inter-quartile-range-iqr&quot;&gt;2. Inter Quartile Range (IQR)&lt;/h5&gt;
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/iqr.jpg&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;A boxplot uses IQR to display data, and potentially outliers. But to find out and remove these outliers, we will have to calculate IQR for each feature manually. 
+First let us understand the jarguns in present in the picture.&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Min&lt;/strong&gt;: least score, excluding outliers&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Lower quartile(Q1)&lt;/strong&gt;: 25th percentile of the data&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Median&lt;/strong&gt;: Marks the mid point of the data&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Upper quartile(Q3)&lt;/strong&gt;: 75th percentile of the data&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Max&lt;/strong&gt;: Highest value, again, excluding outliers&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;IQR&lt;/strong&gt;: The mid 50% of the data&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Whiskers&lt;/strong&gt;: The lower and upper 25% of the data&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Intuition behind IQR is that a normally distributed data is centered around zero mean with unit variance, therefore, likely forming a thick cluster around the mean. So a standard rule of thumb is anything outside of &lt;code class=&quot;highlighter-rouge&quot;&gt;(Q1 - 1.5 IQR)&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;(Q3 + 1.5 IQR)&lt;/code&gt;can be treated as an outlier.&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+def remove_outliers(df, type='zscore'):
+    &quot;&quot;&quot;
+    Method to remove outliers. This method caps the outliers with min and max values obtained from 
+    respective methods instead of removing them.
+    :param df: a pandas dataframe
+    :param type: currently supported 'zscore', 'iqr'
+    :return: dataframe with outliers removed
+    &quot;&quot;&quot;
+    if type=='zscore':
+        threshold = 3
+        df[stats.zscore(df)&amp;gt; threshold] = threshold
+        df[stats.zscore(df)&amp;lt; -threshold] = -threshold
+        return df
+    elif type=='iqr':
+        q1 = df.quantile(0.1)
+        q3 = df.quantile(0.9)
+        for i, (low, high) in enumerate(zip(q1,q3)):
+            df[str(i)] = np.where(df[str(i)] &amp;lt; low, low, df[str(i)])
+            df[str(i)] = np.where(df[str(i)] &amp;gt; high, high, df[str(i)])
+        return df
+    else:
+        raise Exception(&quot;Unknown type specified. Please choose one in ['zscore', 'iqr']&quot;)
+&lt;/pre&gt;
+
+&lt;p&gt;First, let us try use Z-scores to remove outliers. Anything that is above or below a standard threshold can either be capped to that threshold or the sample can be removed. In our case, let us try with capping values not within the threshold. The rule of thumb for thresold is abs(3)&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+data_outlier_zscored = remove_outliers(data.copy(), type='zscore')
+&lt;/pre&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+data_outlier_zscored.describe()
+&lt;/pre&gt;
+
+&lt;div&gt;
+&lt;table class=&quot;table table-sm&quot;&gt;
+  &lt;thead&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;th&gt;&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 0&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 1&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 2&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 3&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;count&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;mean&lt;/td&gt;
+      &lt;td&gt;0.15&lt;/td&gt;
+      &lt;td&gt;-0.02&lt;/td&gt;
+      &lt;td&gt;-0.09&lt;/td&gt;
+      &lt;td&gt;0.14&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;std&lt;/td&gt;
+      &lt;td&gt;17.80&lt;/td&gt;
+      &lt;td&gt;4.97&lt;/td&gt;
+      &lt;td&gt;12.73&lt;/td&gt;
+      &lt;td&gt;12.64&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;min&lt;/td&gt;
+      &lt;td&gt;-77.14&lt;/td&gt;
+      &lt;td&gt;-39.31&lt;/td&gt;
+      &lt;td&gt;-44.23&lt;/td&gt;
+      &lt;td&gt;-75.94&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;25%&lt;/td&gt;
+      &lt;td&gt;-0.46&lt;/td&gt;
+      &lt;td&gt;-0.24&lt;/td&gt;
+      &lt;td&gt;-1.15&lt;/td&gt;
+      &lt;td&gt;-0.02&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;50%&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;0.00&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;75%&lt;/td&gt;
+      &lt;td&gt;1.19&lt;/td&gt;
+      &lt;td&gt;0.13&lt;/td&gt;
+      &lt;td&gt;0.35&lt;/td&gt;
+      &lt;td&gt;0.76&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;max&lt;/td&gt;
+      &lt;td&gt;78.06&lt;/td&gt;
+      &lt;td&gt;42.65&lt;/td&gt;
+      &lt;td&gt;47.14&lt;/td&gt;
+      &lt;td&gt;91.52&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+plt.subplots_adjust(bottom=0.3, top=1.5, left=0.4, right=1.5)
+for i in range(len(data_outlier_zscored.columns)):
+    plt.subplot(2,2,i+1)
+    plt.scatter(range(len(data_outlier_zscored)),data_outlier_zscored[str(i)], color=palette(i), label='feature_'+str(i))
+    plt.xlabel('timesteps')
+    plt.ylabel('feature values')
+    plt.legend()
+plt.show()
+&lt;/pre&gt;
+
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_27_0.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Clearly, this is a better looking pattern than the previous one in block 438. The values are centered around mean and show a visible pattern that a computational algorithm can take advantage of.&lt;/p&gt;
+
+&lt;p&gt;For our testing purpose, let us also try outlier removal with IQR.&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+data_outlier_iqr = remove_outliers(data.copy(), type='iqr')
+&lt;/pre&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+data_outlier_iqr.describe()
+&lt;/pre&gt;
+
+&lt;div&gt;
+&lt;table class=&quot;table table-sm&quot;&gt;
+  &lt;thead&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;th&gt;&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 0&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 1&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 2&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 3&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;count&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;mean&lt;/td&gt;
+      &lt;td&gt;0.04&lt;/td&gt;
+      &lt;td&gt;-0.02&lt;/td&gt;
+      &lt;td&gt;-0.06&lt;/td&gt;
+      &lt;td&gt;0.32&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;std&lt;/td&gt;
+      &lt;td&gt;16.47&lt;/td&gt;
+      &lt;td&gt;2.96&lt;/td&gt;
+      &lt;td&gt;10.85&lt;/td&gt;
+      &lt;td&gt;8.72&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;min&lt;/td&gt;
+      &lt;td&gt;-28.86&lt;/td&gt;
+      &lt;td&gt;-5.61&lt;/td&gt;
+      &lt;td&gt;-20.17&lt;/td&gt;
+      &lt;td&gt;-15.66&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;25%&lt;/td&gt;
+      &lt;td&gt;-0.46&lt;/td&gt;
+      &lt;td&gt;-0.24&lt;/td&gt;
+      &lt;td&gt;-1.15&lt;/td&gt;
+      &lt;td&gt;-0.02&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;50%&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;-0.00&lt;/td&gt;
+      &lt;td&gt;0.00&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;75%&lt;/td&gt;
+      &lt;td&gt;1.19&lt;/td&gt;
+      &lt;td&gt;0.13&lt;/td&gt;
+      &lt;td&gt;0.35&lt;/td&gt;
+      &lt;td&gt;0.76&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;max&lt;/td&gt;
+      &lt;td&gt;28.80&lt;/td&gt;
+      &lt;td&gt;5.50&lt;/td&gt;
+      &lt;td&gt;20.21&lt;/td&gt;
+      &lt;td&gt;17.08&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+plt.subplots_adjust(bottom=0.3, top=1.5, left=0.4, right=1.5)
+for i in range(len(data_outlier_iqr.columns)):
+    plt.subplot(2,2,i+1)
+    plt.scatter(range(len(data_outlier_iqr)),data_outlier_iqr[str(i)], color=palette(i), label='feature_'+str(i))
+    plt.xlabel('timesteps')
+    plt.ylabel('feature values')
+    plt.legend(loc=1)
+plt.show()
+&lt;/pre&gt;
+
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_31_0.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Clearly, the IQR approach does not work here. The reason being, if we observed the boxplot we can see that data is not clustered around the median and is too spread apart. Majority of the data is outside of Q1 and Q3, although these not being outliers. Hence using this method not suitable for our use case. Let us stick to &lt;strong&gt;Z-score&lt;/strong&gt; outlier treatment&lt;/p&gt;
+
+&lt;h3 id=&quot;skew-check&quot;&gt;Skew Check&lt;/h3&gt;
+
+&lt;p&gt;Most machine learning algorithms assume data to be following a distribution, more specifically a guassian. Usually checking the skewness of the data will let us know if data is a guassian. Guassian distributions have a skew range of (-1,1)&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+data_outlier_zscored.skew()
+&lt;/pre&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Col 0 - 0.042878
+Col 1 - 0.001488
+Col 2 - 0.026184
+Col 3 - 0.158650
+dtype: float64
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Our data is not skewed. We can skip log transformations which is one of the methods used to remove skew in data&lt;/p&gt;
+
+&lt;h3 id=&quot;data-normalization&quot;&gt;Data Normalization&lt;/h3&gt;
+
+&lt;p&gt;One of the important methods in predictive analytics is Data Normalization. The intuition behind this is very simple. We want to bring all the features under the same scale for computation. This way the model is not biased numerically towards any feature. With Z-score normalization, data is centered around zero mean and unit variance. Once this is achieved two values can be compared through distribution’s standard deviation. For example if person A’s score(SAT) is 2 times above standard deviation and person B’s score(ACT) is 1.5 times above standard deviation, there by we can conclude person A has a better score. So bottomline, data normalization helps create such a stage for a fair comparison and machine learning models exploit this very well.&lt;/p&gt;
+
+&lt;p&gt;For our use case, let us use Z-score normalization&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+def zscore_norm(df):
+    &quot;&quot;&quot;
+    Method to normalize data using z-score approach
+    :param df: a pandas dataframe
+    :return: normalized dataframe 
+    &quot;&quot;&quot;
+    return (df-df.mean())/df.std()
+
+data_norm = zscore_norm(data_outlier_removed)
+&lt;/pre&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+data_norm.describe()
+&lt;/pre&gt;
+
+&lt;div&gt;
+&lt;table class=&quot;table table-sm&quot;&gt;
+  &lt;thead&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;th&gt;&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 0&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 1&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 2&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 3&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;count&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+      &lt;td&gt;3000.00&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;mean&lt;/td&gt;
+      &lt;td&gt;-1.10e-17&lt;/td&gt;
+      &lt;td&gt;1.74e-17&lt;/td&gt;
+      &lt;td&gt;-2.78e-17&lt;/td&gt;
+      &lt;td&gt;7.44e-18&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;std&lt;/td&gt;
+      &lt;td&gt;1.00&lt;/td&gt;
+      &lt;td&gt;1.00&lt;/td&gt;
+      &lt;td&gt;1.00&lt;/td&gt;
+      &lt;td&gt;1.00&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;min&lt;/td&gt;
+      &lt;td&gt;-4.34&lt;/td&gt;
+      &lt;td&gt;-7.89&lt;/td&gt;
+      &lt;td&gt;-3.46&lt;/td&gt;
+      &lt;td&gt;-6.01&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;25%&lt;/td&gt;
+      &lt;td&gt;-3.45e-02&lt;/td&gt;
+      &lt;td&gt;-4.34e-02&lt;/td&gt;
+      &lt;td&gt;-8.33e-02&lt;/td&gt;
+      &lt;td&gt;-1.37e-02&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;50%&lt;/td&gt;
+      &lt;td&gt;-8.69e-03&lt;/td&gt;
+      &lt;td&gt;5.14e-03&lt;/td&gt;
+      &lt;td&gt;7.10e-03&lt;/td&gt;
+      &lt;td&gt;-1.14e-02&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;75%&lt;/td&gt;
+      &lt;td&gt;5.82e-02&lt;/td&gt;
+      &lt;td&gt;3.24e-02&lt;/td&gt;
+      &lt;td&gt;3.46e-02&lt;/td&gt;
+      &lt;td&gt;4.88e-02&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;max&lt;/td&gt;
+      &lt;td&gt;4.37&lt;/td&gt;
+      &lt;td&gt;8.57&lt;/td&gt;
+      &lt;td&gt;3.70&lt;/td&gt;
+      &lt;td&gt;7.22&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Now let us plot this data to see if the captured pattern has become evident and distinguishable, after the data wrangling techniques&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+mpl.rcParams['figure.dpi'] = 150
+plt.plot(range(len(data_norm)), data_norm)
+plt.xlabel('timesteps')
+plt.ylabel('feature values')
+plt.legend(data_norm.columns)
+plt.show()
+
+&lt;/pre&gt;
+
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_41_0.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Voila!! This is beatuiful. We see a clear pattern in the machine lifecycle. This machine ran in normal mode till around 1250 timesteps. At around 1250 to 1450, it ran into a faulty mode. From timestep 1450 the machine probably entered a failed state, bringing all readings close to zero.&lt;/p&gt;
+
+&lt;p&gt;Let us visualize each feature seperately to see if what we concluded in the above statement is true&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+plt.subplots_adjust(bottom=0.3, top=1.5, left=0.4, right=1.5)
+for i in range(4):
+    obs = data_norm.iloc[:,i]
+    plt.subplot(2,2,i+1)
+    plt.plot(range(len(obs)), obs, color=palette(i))
+    plt.legend(str(i))
+    plt.yticks(range(-5,6,2))
+    plt.xlabel('timesteps')
+    plt.ylabel('feature values')
+plt.show()
+plt.close()
+&lt;/pre&gt;
+
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_43_0.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Yes! All the four features in this machine follow a similar behaviour i.e in normal mode(till 1250 timesteps) all the four features show similar behaviour with not much variance in data. When the machine enters a faulty mode, which is between 1250 to 1450 timesteps, we can see high variance in data. As the machine fails all the features stick around zero for the rest of the timesteps. We can build a computational method around this approach to pinpoint faulty and failed states.&lt;/p&gt;
+
+&lt;p&gt;First let us observe if this behaviour persists in all the machines we have.&lt;/p&gt;
+
+&lt;p&gt;Data cleanse, transform and normalize for all the data frames in memory.&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+for idx, df in enumerate(dfs):
+    # 1. Data Cleansing
+    # 2. Data Transformations(Outlier removal)
+    # 3. Data Normalization
+    df = fix_missing_values(df)
+    df = remove_outliers(df, type='zscore')
+    df = zscore_norm(df)
+    dfs[idx] = df    
+&lt;/pre&gt;
+
+&lt;p&gt;Plot each feature seperately, for each machine like we did 2 blocks above&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+for idx, (file, df) in enumerate(zip(files, dfs)):
+    plt.subplots_adjust(bottom=0.3, top=1.5, left=0.4, right=1.5)
+    print('Machine - ', file.split('/')[-1], '| Data frame index - ', idx)
+    for i in range(4):
+        obs = df.iloc[:,i]
+        plt.subplot(2,2,i+1)
+        plt.plot(range(len(obs)), obs, color=palette(i))
+        plt.legend(str(i))
+        plt.yticks(range(-5,6,2))
+        plt.xlabel('timesteps')
+        plt.ylabel('feature values')
+    plt.show()
+    plt.close()
+&lt;/pre&gt;
+&lt;div class=&quot;machine_plots_scroll&quot;&gt;
+Machine -  machine_5.csv | Data frame index -  0
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_1.png&quot; /&gt;
+
+
+Machine -  machine_14.csv | Data frame index -  1
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_3.png&quot; /&gt;
+
+
+Machine -  machine_15.csv | Data frame index -  2
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_5.png&quot; /&gt;
+
+
+Machine -  machine_4.csv | Data frame index -  3
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_7.png&quot; /&gt;
+
+
+Machine -  machine_6.csv | Data frame index -  4
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_9.png&quot; /&gt;
+
+
+Machine -  machine_17.csv | Data frame index -  5
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_11.png&quot; /&gt;
+
+
+Machine -  machine_16.csv | Data frame index -  6
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_13.png&quot; /&gt;
+
+
+Machine -  machine_7.csv | Data frame index -  7
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_15.png&quot; /&gt;
+
+
+Machine -  machine_3.csv | Data frame index -  8
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_17.png&quot; /&gt;
+
+
+Machine -  machine_12.csv | Data frame index -  9
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_19.png&quot; /&gt;
+
+
+Machine -  machine_13.csv | Data frame index -  10
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_21.png&quot; /&gt;
+
+
+Machine -  machine_2.csv | Data frame index -  11
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_23.png&quot; /&gt;
+
+
+Machine -  machine_0.csv | Data frame index -  12
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_25.png&quot; /&gt;
+
+
+Machine -  machine_11.csv | Data frame index -  13
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_27.png&quot; /&gt;
+
+
+Machine -  machine_10.csv | Data frame index -  14
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_29.png&quot; /&gt;
+
+
+Machine -  machine_1.csv | Data frame index -  15
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_31.png&quot; /&gt;
+
+
+Machine -  machine_9.csv | Data frame index -  16
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_33.png&quot; /&gt;
+
+
+Machine -  machine_18.csv | Data frame index -  17
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_35.png&quot; /&gt;
+
+
+Machine -  machine_19.csv | Data frame index -  18
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_37.png&quot; /&gt;
+
+
+Machine -  machine_8.csv | Data frame index -  19
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_48_39.png&quot; /&gt;
+
+
+As we see, expected behaviour is observed. We can goahead and build a computational method to capture thi behaviour
+
+## Stage 4 (Final Stage): Computational Inference (Prediction)
+
+Let us see the variance of data in normal mode, faulty mode and failed mode. For demonstration purposes let us pick data from machine 7, which is in the 8th position 
+
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+print('*** Machine 7 plots ***')
+machine7 = dfs[7]
+plt.subplots_adjust(bottom=0.3, top=1.5, left=0.4, right=1.5)
+for i in range(4):
+    obs = machine7.iloc[:,i]
+    plt.subplot(2,2,i+1)
+    plt.plot(range(len(obs)), obs, color=palette(i))
+    plt.legend(str(i))
+    plt.yticks(range(-5,6,2))
+    plt.xlabel('timesteps')
+    plt.ylabel('feature values')
+plt.show()
+plt.close()
+&lt;/pre&gt;
+
+    *** Machine 7 plots ***
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_52_1.png&quot; /&gt;
+&lt;/div&gt;
+
+&lt;p&gt;As we can see, this machine runs normally till around 1200 timesteps. From timesteps 1200 to 1450 we can suspect the machine to be in fauly state, from around 1450 the machine enters a fail state. Let us build a hypothesis using this behaviour and extrapolate it on all our machines to see if all of them showcase similar behaviour(at different timesteps though)&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+print('*** Machine 7 statistics ***\n')
+def print_stats(data, mode):
+    &quot;&quot;&quot;
+    Method to print min, max, variance of a pandas dataframe
+    :param df: a pandas dataframe
+    &quot;&quot;&quot;
+    if mode is None:
+        raise Exception('Please specify mode. Options-&amp;gt;[&quot;normal&quot;, &quot;faulty&quot;, &quot;failed&quot;]')
+    feature1 = data.iloc[:,0]
+    feature2 = data.iloc[:,1]
+    feature3 = data.iloc[:,2]
+    feature4 = data.iloc[:,3]
+    print(f'Range and variance of features in {mode} mode')
+    print(&quot;Feature 1 - &quot;,feature1.min(), '|', feature1.max(), '|', feature1.var())
+    print(&quot;Feature 2 - &quot;,feature2.min(), '|', feature2.max(), '|', feature2.var())
+    print(&quot;Feature 3 - &quot;,feature3.min(), '|', feature3.max(), '|', feature3.var())
+    print(&quot;Feature 4 - &quot;,feature4.min(), '|', feature4.max(), '|',  feature4.var(),'\n\n')
+
+    
+# Range and variance of features in normal mode
+normal_mode = 1200
+normal_data = machine7[:normal_mode]
+print_stats(normal_data, 'normal')
+
+# Range and variance of features in faulty mode
+faulty_mode = [1250,1450]
+faulty_data = machine7[faulty_mode[0]:faulty_mode[1]]
+print_stats(faulty_data, 'faulty')
+
+# Range and variance of features in failed mode
+fail_mode = 1450
+fail_data = machine7[fail_mode:]
+print_stats(fail_data, 'fail')
+&lt;/pre&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;*** Machine 7 statistics ***
+
+Range and variance of features in normal mode
+Feature 1 -  -2.21 | 2.19 | 1.75
+Feature 2 -  -1.78 | 1.79 | 0.77
+Feature 3 -  -2.88 | 2.89 | 2.03
+Feature 4 -  -2.15 | 2.12 | 1.08 
+
+
+Range and variance of features in faulty mode
+Feature 1 -  -4.34 | 4.37 | 3.62
+Feature 2 -  -7.89 | 8.57 | 9.45
+Feature 3 -  -3.12 | 3.70 | 1.92
+Feature 4 -  -6.01 | 6.24 | 6.85 
+
+
+Range and variance of features in fail mode
+Feature 1 -  -2.29 | 4.11 | 0.05
+Feature 2 -  -4.42 | 4.05 | 0.09
+Feature 3 -  -3.46 | 3.48 | 0.04
+Feature 4 -  -5.73 | 7.22 | 0.17 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Let us carry out the same analysis on some other machine to verify and cross check if there are any patterns across machine that we can generalize to create a computational method.&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+print('*** Machine 15 plots ***')
+machine15 = dfs[2]
+plt.subplots_adjust(bottom=0.3, top=1.5, left=0.4, right=1.5)
+for i in range(4):
+    obs = machine15.iloc[:,i]
+    plt.subplot(2,2,i+1)
+    plt.plot(range(len(obs)), obs, color=palette(i))
+    plt.legend(str(i))
+    plt.yticks(range(-5,6,2))
+    plt.xlabel('timesteps')
+    plt.ylabel('feature values')
+plt.show()
+plt.close()
+&lt;/pre&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;*** Machine 15 plots ***
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_56_1.png&quot; /&gt;&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+print('*** Machine 15 statistics ***\n')
+
+def print_stats(data, mode):
+    &quot;&quot;&quot;
+    Method to print min, max, variance of a pandas dataframe
+    :param df: a pandas dataframe
+    &quot;&quot;&quot;
+    if mode is None:
+        raise Exception('Please specify mode. Options-&amp;gt;[&quot;normal&quot;, &quot;faulty&quot;, &quot;failed&quot;]')
+    feature1 = data.iloc[:,0]
+    feature2 = data.iloc[:,1]
+    feature3 = data.iloc[:,2]
+    feature4 = data.iloc[:,3]
+    print(f'Range and variance of features in {mode} mode')
+    print(&quot;Feature 1 - &quot;,feature1.min(), '|', feature1.max(), '|', feature1.var())
+    print(&quot;Feature 2 - &quot;,feature2.min(), '|', feature2.max(), '|', feature2.var())
+    print(&quot;Feature 3 - &quot;,feature3.min(), '|', feature3.max(), '|', feature3.var())
+    print(&quot;Feature 4 - &quot;,feature4.min(), '|', feature4.max(), '|',  feature4.var(),'\n\n')
+
+    
+# Range and variance of features in normal mode
+normal_mode = 1500
+normal_data = machine15[:normal_mode]
+print_stats(normal_data, 'normal')
+
+# Range and variance of features in faulty mode
+faulty_mode = [1700,1800]
+faulty_data = machine15[faulty_mode[0]:faulty_mode[1]]
+print_stats(faulty_data, 'faulty')
+
+# Range and variance of features in failed mode
+fail_mode = 1800
+fail_data = machine15[fail_mode:]
+print_stats(fail_data, 'fail')
+&lt;/pre&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;*** Machine 15 statistics ***
+
+Range and variance of features in normal mode
+Feature 1 -  -2.06 | 2.05 | 1.55
+Feature 2 -  -2.13 | 2.13 | 1.10
+Feature 3 -  -2.63 | 2.63 | 1.69
+Feature 4 -  -2.05 | 2.07 | 1.02 
+
+
+Range and variance of features in faulty mode
+Feature 1 -  -4.11 | 3.70 | 3.52
+Feature 2 -  -7.31 | 7.92 | 8.82
+Feature 3 -  -2.50 | 3.23 | 1.49
+Feature 4 -  -8.20 | 7.96 | 10.90 
+
+
+Range and variance of features in fail mode
+Feature 1 -  -0.16 | 0.15 | 0.00
+Feature 2 -  -0.72 | 0.71 | 0.02
+Feature 3 -  -0.21 | 0.21 | 0.00
+Feature 4 -  -0.21 | 0.23 | 0.00 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;some-observations&quot;&gt;Some Observations&lt;/h4&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Across all three modes there is a clear distinctive differnce in their stats.
+    &lt;ul&gt;
+      &lt;li&gt;Normal mode’s variance is around &lt;strong&gt;1 to 1.5&lt;/strong&gt;&lt;/li&gt;
+      &lt;li&gt;Faulty mode, as expected, has a high variance. It is around &lt;strong&gt;thrice&lt;/strong&gt; the variance of normal mode&lt;/li&gt;
+      &lt;li&gt;Fail mode, has little to no variance due to data being zeros&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;This inference can be made across all the machines as the behaviour is similar, as seen in the graphs plotted for each machine in block 453 above.&lt;/li&gt;
+  &lt;li&gt;We can say, if two out of four features have variance above a so called “normal variance”, then we can falg it as faulty and raise an alarm.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h4 id=&quot;approach&quot;&gt;Approach&lt;/h4&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;As discussed, we can track the variance of features of a machine for every ‘n’ timesteps to see if it is above ‘normal variance’. If it is, then we flag it faulty.&lt;/li&gt;
+  &lt;li&gt;Also, if the computational method missed finding a faulty case, then we atleast need to inform when the machine is in failed state. This is fairly simple to do as the variance in data is almost close to zero.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Let us definte few variables required for our computation:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;normal variance&lt;/strong&gt;: 1&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;faulty variance limit&lt;/strong&gt;: 3 * normal variance&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;fail mode variance&lt;/strong&gt;: lesser than 0.01&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;n&lt;/strong&gt;: number of timesteps to consider at once for variance check: 20&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+def inference(df):
+    def label_data(data):
+        if data is None or len(data) == 0:
+            raise Exception('Data is empty')
+        variance = data.var()
+        if (variance &amp;gt; faulty_var).sum() &amp;gt;= 2:
+            return 'faulty'
+        elif (variance &amp;lt; failed_var).sum() &amp;gt;=2:
+            return 'failed'
+        else:
+            return 'normal'
+
+    ### Hyperparameters - start ###
+    n = 20
+    normal_mode_var = 1
+    faulty_var = 3*normal_mode_var
+    failed_var = 0.01
+    ### Hyperparameters - end ###
+    
+    df['mode'] = 'failed'
+    start = 0    
+    for end in range(n, len(df), n):
+        mode = label_data(df[start:end])
+        df.loc[start:end, 'mode'] = mode
+        start+=n
+
+    return df
+
+machine15 = inference(machine15)
+machine15.head()
+&lt;/pre&gt;
+
+&lt;div&gt;
+&lt;style scoped=&quot;&quot;&gt;
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+&lt;/style&gt;
+&lt;table class=&quot;table table-sm&quot;&gt;
+  &lt;thead&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 0&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 1&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 2&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Col 3&lt;/th&gt;
+      &lt;th scope=&quot;col&quot;&gt;Machine's Mode&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;0.65&lt;/td&gt;
+      &lt;td&gt;2.11&lt;/td&gt;
+      &lt;td&gt;-0.84&lt;/td&gt;
+      &lt;td&gt;0.77&lt;/td&gt;
+      &lt;td&gt;normal&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;0.56&lt;/td&gt;
+      &lt;td&gt;0.66&lt;/td&gt;
+      &lt;td&gt;0.82&lt;/td&gt;
+      &lt;td&gt;1.67&lt;/td&gt;
+      &lt;td&gt;normal&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;1.09&lt;/td&gt;
+      &lt;td&gt;-0.16&lt;/td&gt;
+      &lt;td&gt;-1.27&lt;/td&gt;
+      &lt;td&gt;-0.21&lt;/td&gt;
+      &lt;td&gt;normal&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;1.68&lt;/td&gt;
+      &lt;td&gt;1.55&lt;/td&gt;
+      &lt;td&gt;-0.96&lt;/td&gt;
+      &lt;td&gt;-0.31&lt;/td&gt;
+      &lt;td&gt;normal&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr style=&quot;text-align: center;&quot;&gt;
+      &lt;td&gt;1.46&lt;/td&gt;
+      &lt;td&gt;0.87&lt;/td&gt;
+      &lt;td&gt;1.57&lt;/td&gt;
+      &lt;td&gt;1.04&lt;/td&gt;
+      &lt;td&gt;normal&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+print('*** Machine 15 plots ***')
+plt.subplots_adjust(bottom=0.3, top=1.5, left=0.4, right=1.5)
+mpl.rcParams['figure.dpi'] = 250 
+data_len = len(machine15)
+colors = {'normal':palette(2), 'faulty':palette(1), 'failed':palette(0)}
+for i in range(4):
+    plt.subplot(2,2,i+1)
+    plt.scatter(range(data_len), machine15[str(i)], c=machine15['mode'].apply(lambda x: colors[x]))
+    plt.xlabel('timesteps')
+    plt.ylabel('feature values')
+plt.show()
+&lt;/pre&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;*** Machine 15 plots ***
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_60_1.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;As we can clearly observe, our approach is working on identifying the when the machine was running &lt;font color=&quot;green&quot;&gt;normally&lt;/font&gt;, when it entered a &lt;font color=&quot;blue&quot;&gt;faulty mode&lt;/font&gt; and when it &lt;font color=&quot;red&quot;&gt;failed&lt;/font&gt;. Let us now extrapolate this approach on all our machine dataframes&lt;/p&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+mpl.rcParams['figure.dpi'] = 250 
+for idx, (file, df) in enumerate(zip(files, dfs)):
+    plt.subplots_adjust(bottom=0.3, top=1.5, left=0.4, right=1.5)
+    print('Machine - ', file.split('/')[-1], '| Data frame index - ', idx)
+    df = inference(df)
+    data_len = len(df)
+    colors = {'normal':palette(2), 'faulty':palette(1), 'failed':palette(0)}
+    for i in range(4):
+        plt.subplot(2,2,i+1)
+        plt.scatter(range(data_len), df[str(i)], c=df['mode'].apply(lambda x: colors[x]))
+        plt.xlabel('timesteps')
+        plt.ylabel('feature values')
+
+    plt.show()
+&lt;/pre&gt;
+&lt;div class=&quot;machine_plots_scroll&quot;&gt;
+Machine -  machine_5.csv | Data frame index -  0
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_1.png&quot; /&gt;
+
+
+Machine -  machine_14.csv | Data frame index -  1
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_3.png&quot; /&gt;
+
+
+Machine -  machine_15.csv | Data frame index -  2
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_5.png&quot; /&gt;
+
+
+Machine -  machine_4.csv | Data frame index -  3
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_7.png&quot; /&gt;
+
+
+Machine -  machine_6.csv | Data frame index -  4
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_9.png&quot; /&gt;
+
+
+Machine -  machine_17.csv | Data frame index -  5
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_11.png&quot; /&gt;
+
+
+Machine -  machine_16.csv | Data frame index -  6
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_13.png&quot; /&gt;
+
+
+Machine -  machine_7.csv | Data frame index -  7
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_15.png&quot; /&gt;
+
+
+Machine -  machine_3.csv | Data frame index -  8
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_17.png&quot; /&gt;
+
+
+Machine -  machine_12.csv | Data frame index -  9
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_19.png&quot; /&gt;
+
+
+Machine -  machine_13.csv | Data frame index -  10
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_21.png&quot; /&gt;
+
+
+Machine -  machine_2.csv | Data frame index -  11
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_23.png&quot; /&gt;
+
+
+Machine -  machine_0.csv | Data frame index -  12
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_25.png&quot; /&gt;
+
+
+Machine -  machine_11.csv | Data frame index -  13
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_27.png&quot; /&gt;
+
+
+Machine -  machine_10.csv | Data frame index -  14
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_29.png&quot; /&gt;
+
+
+Machine -  machine_1.csv | Data frame index -  15
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_31.png&quot; /&gt;
+
+
+Machine -  machine_9.csv | Data frame index -  16
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_33.png&quot; /&gt;
+
+
+Machine -  machine_18.csv | Data frame index -  17
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_35.png&quot; /&gt;
+
+
+Machine -  machine_19.csv | Data frame index -  18
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_37.png&quot; /&gt;
+
+
+Machine -  machine_8.csv | Data frame index -  19
+
+
+
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/machine_maintainence/output_62_39.png&quot; /&gt;
+&lt;/div&gt;
+
+&lt;p&gt;As we can see, most of the graphs show distinctive difference between modes. Again, to clarify:
+        &lt;br /&gt;&lt;font color=&quot;mediumseagreen&quot;&gt;Green: Normal Mode&lt;font&gt;&lt;br /&gt;
+        &lt;font color=&quot;steelblue&quot;&gt;Blue: Faulty Mode&lt;font&gt;&lt;br /&gt;
+        &lt;font color=&quot;crimson&quot;&gt;Red: Failed Mode&lt;font&gt;&lt;br /&gt;&lt;/font&gt;&lt;/font&gt;&lt;/font&gt;&lt;/font&gt;&lt;/font&gt;&lt;/font&gt;&lt;/p&gt;
+
+&lt;p&gt;Although we see some overlap, it is very important for us to identify the faulty modes. We can afford some flagging normal modes as faulty ones but not the other way round. i.e we need high recall than precision. With high recall and manual interventions, we can save machines from entering a &lt;font color=&quot;steelblue&quot;&gt;faulty state&lt;/font&gt;&lt;br /&gt; or a &lt;font color=&quot;crimson&quot;&gt;failed state&lt;font&gt;&lt;br /&gt;&lt;/font&gt;&lt;/font&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h3&gt;
+
+&lt;p&gt;This computational method takes a recall high approach, identifies when a machine enters a faulty state and raises an alarm. With this approach there a quite a few assumptions:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;A machine’s variance in normal mode is assumed to be around 1&lt;/li&gt;
+  &lt;li&gt;A machine’s variance in faulty mode is assumed to be around 3 times of normal mode.&lt;/li&gt;
+  &lt;li&gt;We are checking every 20 timesteps. This parameter can be tweaked to find the right set of expected results.&lt;/li&gt;
+  &lt;li&gt;Assumes that 20 machines are all not repeating machines(20 unique machines)&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Advantages:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;Easy to implement algorithm.&lt;/li&gt;
+  &lt;li&gt;There is no computational overhead&lt;/li&gt;
+  &lt;li&gt;Achieves the high recall motto&lt;/li&gt;
+  &lt;li&gt;Has multiple parameters which can be tweaked to find the right setting required&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Disadvantages:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;This method generalizes the pattern extraction based on just observing data from 20 machines.&lt;/li&gt;
+  &lt;li&gt;Does not include any sort of ML approach, works on a rule based approach with some hyperparameter tunning required&lt;/li&gt;
+  &lt;li&gt;Needs extensive data analysis before writing a generic method&lt;/li&gt;
+  &lt;li&gt;Possibility of this approach failing is more when it encouters a machine that behaves completely different than the ones seen&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Future work:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;There is enough room for improvement with the inclusion of more data and ground truth labels.&lt;/li&gt;
+  &lt;li&gt;If we have access to historical data, we can have methods like Hidden markov models, LSTM’s track the machine’s data over time to predict failures before it occurs.&lt;/li&gt;
+  &lt;li&gt;With a supervised learning approach, we have big guns like ARIMA, LSTM’s and other time series learning models which work more robustly in predicting failures with high accuracies.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Thank you!&lt;/p&gt;</content><author><name>Shreesha N</name></author><summary type="html">Predictive Machine Maintainence</summary></entry><entry><title type="html">Playing Atari Breakout - DQN using Pytorch</title><link href="http://localhost:4000/2019/10/26/rl_dqn.html" rel="alternate" type="text/html" title="Playing Atari Breakout - DQN using Pytorch" /><published>2019-10-26T06:45:13-04:00</published><updated>2019-10-26T06:45:13-04:00</updated><id>http://localhost:4000/2019/10/26/rl_dqn</id><content type="html" xml:base="http://localhost:4000/2019/10/26/rl_dqn.html">&lt;script src=&quot;https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js&quot;&gt;&lt;/script&gt;
+
+&lt;p&gt;Recent advancements in Technology has shown us the incredible capabilities hidden inside of a machine, if it is fed properly. One such feed is the combination of Reinforcement Learning algorithms with Deep learning.&lt;/p&gt;
+&lt;h4 id=&quot;assumptions&quot;&gt;Assumptions:&lt;/h4&gt;
+&lt;ol&gt;
+  &lt;li&gt;The reader is familiar with basic Q-Learning algorithm. If not, start &lt;a href=&quot;https://towardsdatascience.com/simple-reinforcement-learning-q-learning-fcddc4b6fe56&quot;&gt;here&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Familiarity with Deep learning and neural networks. If not, start &lt;a href=&quot;http://neuralnetworksanddeeplearning.com/&quot;&gt;here&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Familiarity with Epsilon-greedy method. If not, start &lt;a href=&quot;https://jamesmccaffrey.wordpress.com/2017/11/30/the-epsilon-greedy-algorithm/&quot;&gt;here&lt;/a&gt;
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;In this article, you will see how Deep-Q-Learning algorithm can be implemented in Pytorch. 
+Yes, we are discussing Deep-Q-Learning &lt;a href=&quot;https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf&quot;&gt;(paper)&lt;/a&gt;, a learning algorithm from Deep mind which involves Q-learning and Deep learning. Let’s start 
+&lt;br /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;contents&quot;&gt;Contents:&lt;/h3&gt;
+&lt;ol&gt;
+  &lt;li&gt;Need for Deep-Q-Learning&lt;/li&gt;
+  &lt;li&gt;Theory behind Deep-Q-Learning
+    &lt;ul&gt;
+      &lt;li&gt;Algorithm&lt;/li&gt;
+      &lt;li&gt;Implementation in Pytorch&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Improvements&lt;/li&gt;
+  &lt;li&gt;Results
+&lt;br /&gt;&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h4 id=&quot;need-for-deep-q-learning&quot;&gt;Need for Deep-Q-Learning&lt;/h4&gt;
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/rl_dqn/deep-q-learning-need.png&quot; alt=&quot;DQN vs Q-learning&quot; /&gt;&lt;/p&gt;
+&lt;blockquote style=&quot;text-align:center;font-style: normal;&quot;&gt;
+  &lt;small&gt;Picture credits: Analytics Vidya&lt;/small&gt;
+  &lt;br /&gt;&lt;br /&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;In an RL environment, for state(S) and action(A) there will be a Q-value associated which is, let’s say, is maintained in a table.
+But when the number of possible states are huge, for example in a computer game, Q-values associated with these state-action pairs explode in number. For this reason researchers replaced this Q-table with a function. One of the functions we will discuss today is Deep Neural Network. Hence the name Deep-Q-Learning
+&lt;br /&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;theory-behind-deep-q-learning&quot;&gt;Theory behind Deep-Q-Learning&lt;/h4&gt;
+&lt;p&gt;First let us discuss the algorithm proposed in the original paper, then we will go ahead and implement that in Pytorch
+&lt;br /&gt;&lt;/p&gt;
+
+&lt;h5 id=&quot;algorithm&quot;&gt;Algorithm:&lt;/h5&gt;
+
+&lt;p&gt;&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/rl_dqn/dqn_equation.jpeg&quot; alt=&quot;Deep-Q-learning Eq&quot; /&gt;
+Let us understand this equation part by part.&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;Current state-action pair&lt;/strong&gt;: A state obtained through the atari simulation.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Reward&lt;/strong&gt;: The reward obtained by taking action A from state S.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Discount factor&lt;/strong&gt;: Used to play around with short sighted and long sighted reward.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Estimated state-action pair&lt;/strong&gt;: From state S we transform to state S' by taking action A. Now A' is the most probable action(max) that can be taken from S'.
+&lt;br /&gt;&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h5 id=&quot;implementation&quot;&gt;Implementation:&lt;/h5&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Initialise the breakout environment: We will be using &lt;code class=&quot;highlighter-rouge&quot;&gt;BreakoutNoFrameskip-v4&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+env = Environment('BreakoutNoFrameskip-v4', args, atari_wrapper=True, test=True)
+&lt;/pre&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;We need to create 2 Convolutional Neural Networks. One for &lt;code class=&quot;highlighter-rouge&quot;&gt;Q(S,A)&lt;/code&gt;, let’s call this Q-network, other for &lt;code class=&quot;highlighter-rouge&quot;&gt;Q(S', A')&lt;/code&gt;, let’s call this target network&lt;/li&gt;
+  &lt;li&gt;Using the environment, we collect State(S), Action(A), Reward, Next State(S') like we do in Q-learning.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+state = env.reset() # Start with random state
+action = q_network(state).get_action_using_epsilon_greedy_method() # Use the q_network and then the epsilon greedy method to get the action for state S  
+next_state, reward, terminal, _ = env.step(action) # Use generated action to collect reward(R) and next state(S')
+&lt;/pre&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Now we have collected all the values required to calculate the new Q value.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+# Use Q-network to get action(A) using state(S)
+# Q-Network is the agent we are training. We expect this network to return us q_values that helps us take right action 
+q_value = q_network(state)
+q_value = q_value[action]
+# This is the network we use to estimate the state-action pair.
+target_value = target_network(next_state).max()
+updated_target_value = reward + (discount_factor * target_value * (1-terminal))
+&lt;/pre&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Once we have calculated the target, it will act as a label to our Q-network. We go ahead and calculate the loss and run the optimiser&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre class=&quot;prettyprint lang-python&quot;&gt;
+loss = huber_loss(q_value, updated_target_value)
+&lt;/pre&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;few-questions-need-to-be-answered-here&quot;&gt;Few questions need to be answered here:&lt;/h4&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;Why do we need two networks?&lt;/strong&gt;
+Here, we use our Q-network for training. That means the parameters of this network keeps changing. If we use this network for estimation of state-action pair (S’,A’), then our network generates new (S’,A’) for same state(S) and will never converge. To deal with this the paper introduces a replica of our Q-network, here, termed as target network which is updated on a periodic interval, thus helping the Q-network learn in a stable environment&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Need for Replay Memory (Buffer)&lt;/strong&gt;
+The current training process discussed in the article has a flaw. If we use the atari’s environment every time to generate new state values based on actions, we end up in a sequential state set. This will limit the network’s ability to learn randomness and generalise. Hence we stored a certain number of (state, action, reward, next state) tuples in memory. We then draw a random set of tuples and train our Q-network. This ensures randomness and robustness of our network. Please refer complete codebase(check end of article for github link) for implementation details
+&lt;br /&gt;&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h4 id=&quot;improvements&quot;&gt;Improvements&lt;/h4&gt;
+&lt;p&gt;Few techniques on top of Deep-Q-Networks which boost the performance of our agent.&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;Double Deep-Q-Networks.&lt;/li&gt;
+  &lt;li&gt;Dueling Deep-Q-Networks.&lt;/li&gt;
+  &lt;li&gt;Prioritised Replay Buffer.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Let us discuss these techniques in the tutorials to come!
+&lt;br /&gt;
+&lt;br /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;results&quot;&gt;Results&lt;/h4&gt;
+&lt;p&gt;Training the Deep-network for 20k episodes -&amp;gt; received an average reward close to 20.
+&lt;img class=&quot;img-fluid&quot; src=&quot;/img/posts/rl_dqn/dqn_results.png&quot; alt=&quot;DQN Results&quot; /&gt;
+I hope this tutorial was helpful. You can find the full codebase &lt;a href=&quot;https://github.com/ShreeshaN/ReinforcementLearningTutorials/tree/master/DQN&quot;&gt;here&lt;/a&gt;.
+Happy learning. Cheers !!&lt;/p&gt;</content><author><name>Shreesha N</name></author><summary type="html">Recent advancements in Technology has shown us the incredible capabilities hidden inside of a machine, if it is fed properly. One such feed is the combination of Reinforcement Learning algorithms with Deep learning. Assumptions: The reader is familiar with basic Q-Learning algorithm. If not, start here Familiarity with Deep learning and neural networks. If not, start here Familiarity with Epsilon-greedy method. If not, start here</summary></entry></feed>

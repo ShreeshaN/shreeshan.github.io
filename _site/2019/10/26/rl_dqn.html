@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    Playing Atari Breakout - DQN using Pytorch - Shree Blogs
+    
+  </title>
+
+
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css">
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="http://localhost:4000/2019/10/26/rl_dqn.html">
+  <link rel="alternate" type="application/rss+xml" title="Shree Blogs" href="/feed.xml">
+  <link rel=icon href=/favicon.png>
+<!--  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">-->
+
+
+</head>
+
+
+<body>
+
+  <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/"><img class="brand-image" src="/img/brain-logo.png"/></a></a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fa fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/assets/Shreesha.pdf">Resume</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/posts">Blogs</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/projects">Project Demos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/presentations">Presentations</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/about">About</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <!-- Page Header -->
+
+<header class="masthead" style="background-image: url('/img/posts/rl_dqn/breakout_img.png')">
+  
+    <div class="overlay"></div>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 col-md-10 mx-auto">
+          <div class="post-heading">
+            <h1>Playing Atari Breakout - DQN using Pytorch</h1>
+            
+            <h2 class="subheading">Deep-Q-Learning</h2>
+            
+            <span class="meta">Posted by
+              <a href="#">Shreesha N</a>
+              on October 26, 2019 &middot; <span class="reading-time" title="Estimated read time">
+  
+   6 mins  read </span>
+
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+
+        <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+
+<p>Recent advancements in Technology has shown us the incredible capabilities hidden inside of a machine, if it is fed properly. One such feed is the combination of Reinforcement Learning algorithms with Deep learning.</p>
+<h4 id="assumptions">Assumptions:</h4>
+<ol>
+  <li>The reader is familiar with basic Q-Learning algorithm. If not, start <a href="https://towardsdatascience.com/simple-reinforcement-learning-q-learning-fcddc4b6fe56">here</a></li>
+  <li>Familiarity with Deep learning and neural networks. If not, start <a href="http://neuralnetworksanddeeplearning.com/">here</a></li>
+  <li>Familiarity with Epsilon-greedy method. If not, start <a href="https://jamesmccaffrey.wordpress.com/2017/11/30/the-epsilon-greedy-algorithm/">here</a>
+<br /></li>
+</ol>
+
+<p>In this article, you will see how Deep-Q-Learning algorithm can be implemented in Pytorch. 
+Yes, we are discussing Deep-Q-Learning <a href="https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf">(paper)</a>, a learning algorithm from Deep mind which involves Q-learning and Deep learning. Let’s start 
+<br /></p>
+
+<h3 id="contents">Contents:</h3>
+<ol>
+  <li>Need for Deep-Q-Learning</li>
+  <li>Theory behind Deep-Q-Learning
+    <ul>
+      <li>Algorithm</li>
+      <li>Implementation in Pytorch</li>
+    </ul>
+  </li>
+  <li>Improvements</li>
+  <li>Results
+<br /><br /></li>
+</ol>
+
+<h4 id="need-for-deep-q-learning">Need for Deep-Q-Learning</h4>
+<p><img class="img-fluid" src="/img/posts/rl_dqn/deep-q-learning-need.png" alt="DQN vs Q-learning" /></p>
+<blockquote style="text-align:center;font-style: normal;">
+  <small>Picture credits: Analytics Vidya</small>
+  <br /><br />
+</blockquote>
+
+<p>In an RL environment, for state(S) and action(A) there will be a Q-value associated which is, let’s say, is maintained in a table.
+But when the number of possible states are huge, for example in a computer game, Q-values associated with these state-action pairs explode in number. For this reason researchers replaced this Q-table with a function. One of the functions we will discuss today is Deep Neural Network. Hence the name Deep-Q-Learning
+<br /><br /></p>
+
+<h4 id="theory-behind-deep-q-learning">Theory behind Deep-Q-Learning</h4>
+<p>First let us discuss the algorithm proposed in the original paper, then we will go ahead and implement that in Pytorch
+<br /></p>
+
+<h5 id="algorithm">Algorithm:</h5>
+
+<p><img class="img-fluid" src="/img/posts/rl_dqn/dqn_equation.jpeg" alt="Deep-Q-learning Eq" />
+Let us understand this equation part by part.</p>
+<ol>
+  <li><strong>Current state-action pair</strong>: A state obtained through the atari simulation.</li>
+  <li><strong>Reward</strong>: The reward obtained by taking action A from state S.</li>
+  <li><strong>Discount factor</strong>: Used to play around with short sighted and long sighted reward.</li>
+  <li><strong>Estimated state-action pair</strong>: From state S we transform to state S' by taking action A. Now A' is the most probable action(max) that can be taken from S'.
+<br /><br /></li>
+</ol>
+
+<h5 id="implementation">Implementation:</h5>
+
+<ul>
+  <li>Initialise the breakout environment: We will be using <code class="highlighter-rouge">BreakoutNoFrameskip-v4</code></li>
+</ul>
+
+<pre class="prettyprint lang-python">
+env = Environment('BreakoutNoFrameskip-v4', args, atari_wrapper=True, test=True)
+</pre>
+
+<ul>
+  <li>We need to create 2 Convolutional Neural Networks. One for <code class="highlighter-rouge">Q(S,A)</code>, let’s call this Q-network, other for <code class="highlighter-rouge">Q(S', A')</code>, let’s call this target network</li>
+  <li>Using the environment, we collect State(S), Action(A), Reward, Next State(S') like we do in Q-learning.</li>
+</ul>
+
+<pre class="prettyprint lang-python">
+state = env.reset() # Start with random state
+action = q_network(state).get_action_using_epsilon_greedy_method() # Use the q_network and then the epsilon greedy method to get the action for state S  
+next_state, reward, terminal, _ = env.step(action) # Use generated action to collect reward(R) and next state(S')
+</pre>
+
+<ul>
+  <li>Now we have collected all the values required to calculate the new Q value.</li>
+</ul>
+
+<pre class="prettyprint lang-python">
+# Use Q-network to get action(A) using state(S)
+# Q-Network is the agent we are training. We expect this network to return us q_values that helps us take right action 
+q_value = q_network(state)
+q_value = q_value[action]
+# This is the network we use to estimate the state-action pair.
+target_value = target_network(next_state).max()
+updated_target_value = reward + (discount_factor * target_value * (1-terminal))
+</pre>
+
+<ul>
+  <li>Once we have calculated the target, it will act as a label to our Q-network. We go ahead and calculate the loss and run the optimiser</li>
+</ul>
+
+<pre class="prettyprint lang-python">
+loss = huber_loss(q_value, updated_target_value)
+</pre>
+
+<p><br /></p>
+
+<h4 id="few-questions-need-to-be-answered-here">Few questions need to be answered here:</h4>
+
+<ol>
+  <li><strong>Why do we need two networks?</strong>
+Here, we use our Q-network for training. That means the parameters of this network keeps changing. If we use this network for estimation of state-action pair (S’,A’), then our network generates new (S’,A’) for same state(S) and will never converge. To deal with this the paper introduces a replica of our Q-network, here, termed as target network which is updated on a periodic interval, thus helping the Q-network learn in a stable environment</li>
+  <li><strong>Need for Replay Memory (Buffer)</strong>
+The current training process discussed in the article has a flaw. If we use the atari’s environment every time to generate new state values based on actions, we end up in a sequential state set. This will limit the network’s ability to learn randomness and generalise. Hence we stored a certain number of (state, action, reward, next state) tuples in memory. We then draw a random set of tuples and train our Q-network. This ensures randomness and robustness of our network. Please refer complete codebase(check end of article for github link) for implementation details
+<br /><br /></li>
+</ol>
+
+<h4 id="improvements">Improvements</h4>
+<p>Few techniques on top of Deep-Q-Networks which boost the performance of our agent.</p>
+<ol>
+  <li>Double Deep-Q-Networks.</li>
+  <li>Dueling Deep-Q-Networks.</li>
+  <li>Prioritised Replay Buffer.</li>
+</ol>
+
+<p>Let us discuss these techniques in the tutorials to come!
+<br />
+<br /></p>
+
+<h4 id="results">Results</h4>
+<p>Training the Deep-network for 20k episodes -&gt; received an average reward close to 20.
+<img class="img-fluid" src="/img/posts/rl_dqn/dqn_results.png" alt="DQN Results" />
+I hope this tutorial was helpful. You can find the full codebase <a href="https://github.com/ShreeshaN/ReinforcementLearningTutorials/tree/master/DQN">here</a>.
+Happy learning. Cheers !!</p>
+
+
+        <hr>
+
+        <div class="clearfix">
+
+          
+          
+          <a class="btn btn-primary float-right" href="/2020/04/01/machine_maintainence.html" data-toggle="tooltip" data-placement="top" title="Predictive Machine Maintainence">Next<span class="d-none d-md-inline">
+              Post</span> &rarr;</a>
+          
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Footer -->
+
+<hr>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <ul class="list-inline text-center">
+          
+          <li class="list-inline-item">
+            <a href="mailto:snarasimhamurthy@wpi.edu">
+              <span class="fa-stack fa-lg">
+<!--                <i class="fas fa-circle fa-stack-2x"></i>-->
+<!--                <i class="far fa-envelope fa-stack-1x fa-inverse"></i>-->
+                <i class="fas fa-at"></i>
+
+
+              </span>
+            </a>
+          </li>
+          
+          
+          <li class="list-inline-item">
+            <a href="https://twitter.com/badgod03">
+              <span class="fa-stack fa-lg">
+<!--                <i class="fas fa-circle fa-stack-2x"></i>-->
+<!--                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>-->
+                <i class="fab fa-twitter"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          <li class="list-inline-item">
+            <a href="https://www.facebook.com/nshreesha">
+              <span class="fa-stack fa-lg">
+<!--                <i class="fas fa-circle fa-stack-2x"></i>-->
+<!--                <i class="fab fa-facebook-f fa-stack-1x fa-inverse"></i>-->
+                <i class="fab fa-facebook-f"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          <li class="list-inline-item">
+            <a href="https://www.linkedin.com/in/shreesha-n/">
+              <span class="fa-stack fa-lg">
+<!--                <i class="fas fa-circle fa-stack-2x"></i>-->
+<!--                <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>-->
+                <i class="fab fa-linkedin-in"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          <li class="list-inline-item">
+            <a href="https://github.com/ShreeshaN">
+              <span class="fa-stack fa-lg">
+<!--                <i class="fas fa-circle fa-stack-2x"></i>-->
+<!--                <i class="fab fa-github fa-stack-1x fa-inverse"></i>-->
+                <i class="fab fa-github"></i>
+              </span>
+            </a>
+          </li>
+          
+        
+        <li class="list-inline-item">
+            <a href="https://stackoverflow.com//users/5396755/shreesha-n/">
+          <span class="fa-stack fa-lg">
+            <i class="fab fa-stack-overflow"></i>
+          </span>
+            </a>
+        </li>
+        
+        </ul>
+        <p class="copyright text-muted">Copyright &copy;  2020. Powered by Jeykll.</p>
+      </div>
+    </div>
+  </div>
+    <div>
+        <a href="https://www.easycounter.com/">
+            <img src="https://www.easycounter.com/counter.php?shreeshan"
+                 border="0" alt="Counter"></a>
+        <a href="https://www.easycounter.com/">number of hits since May 2020</a>
+
+    </div>
+</footer>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-clean-blog/5.0.8/css/clean-blog.min.css"></script>
+
+<script src="/assets/scripts.js"></script>
+
+<!--&lt;!&ndash; Compiled and minified JavaScript &ndash;&gt;-->
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>-->
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id="></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', '');
+</script>
+
+
+</body>
+
+</html>
